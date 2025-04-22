@@ -27,6 +27,9 @@ const Navbar = () => {
     {/* Future Extension
   </Link>
 </li> */}
+{/* <li>
+  <Link className="button" to="/Donation">Donate</Link>
+</li> */}
 
 
           <li>
@@ -55,6 +58,7 @@ const Navbar = () => {
               </div>
             </div>
           </li>
+          
           <li>
             <Link className="button" to="/ecopro">
               Kitchen Analytics
@@ -75,6 +79,7 @@ const Navbar = () => {
           </Link>
         </div>
       )}
+      
     </nav>
   );
 };

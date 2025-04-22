@@ -3,6 +3,8 @@ import axios from "axios";
 import { AuthContext } from "../AuthContext";
 import { CircularProgress } from "@mui/material";
 
+// Keep imports the same
+
 const Waste = () => {
   const { loggedIn } = useContext(AuthContext);
   const [foodItem, setFoodItem] = useState("");
@@ -64,7 +66,7 @@ const Waste = () => {
       setMessage("✅ Waste item added successfully!");
       setWasteData([...wasteData, response.data.data]);
 
-      // Clear form fields
+      // Clear form
       setFoodItem("");
       setFoodQuantity("");
       setFoodReason("");
@@ -105,19 +107,17 @@ const Waste = () => {
       {loggedIn ? (
         <>
           <h1 style={styles.title}>LOG YOUR FOOD WASTE</h1>
-
           <div style={styles.content}>
             {/* Waste Form */}
-            <div style={styles.card}>
+            <div style={styles.card} className="fadeIn">
               <h2 style={styles.heading}>Food Waste Details</h2>
               <form onSubmit={handleSubmit} style={styles.form}>
-                <input type="text" value={foodItem} placeholder="Food Item" onChange={(e) => setFoodItem(e.target.value)} required style={styles.input} />
-                <input type="number" value={foodQuantity} placeholder="Quantity Wasted (grams)" onChange={(e) => setFoodQuantity(e.target.value)} required style={styles.input} />
-                <input type="text" value={foodReason} placeholder="Reason for Waste" onChange={(e) => setFoodReason(e.target.value)} required style={styles.input} />
-                <input type="date" value={foodWasteDate} onChange={(e) => setFoodWasteDate(e.target.value)} required style={styles.input} />
-                <input type="text" value={location} placeholder="Location" onChange={(e) => setLocation(e.target.value)} required style={styles.input} />
-                <input type="file" onChange={(e) => setImage(e.target.files[0])} style={styles.input} />
-
+                <input style={styles.input} placeholder="Food Item" value={foodItem} onChange={(e) => setFoodItem(e.target.value)} required />
+                <input style={styles.input} placeholder="Quantity Wasted (grams)" type="number" value={foodQuantity} onChange={(e) => setFoodQuantity(e.target.value)} required />
+                <input style={styles.input} placeholder="Reason for Waste" value={foodReason} onChange={(e) => setFoodReason(e.target.value)} required />
+                <input style={styles.input} type="date" value={foodWasteDate} onChange={(e) => setFoodWasteDate(e.target.value)} required />
+                <input style={styles.input} placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} required />
+                <input style={styles.input} type="file" onChange={(e) => setImage(e.target.files[0])} />
                 <button type="submit" disabled={loading} style={styles.button}>
                   {loading ? <CircularProgress size={24} style={{ color: "white" }} /> : "ADD"}
                 </button>
@@ -125,7 +125,7 @@ const Waste = () => {
             </div>
 
             {/* Waste Table */}
-            <div style={styles.card}>
+            <div style={styles.card} className="fadeIn">
               <h2 style={styles.heading}>Your Food Waste Records</h2>
               <div style={styles.tableContainer}>
                 <table style={styles.table}>
@@ -165,27 +165,102 @@ const Waste = () => {
               </div>
             </div>
           </div>
-
-          {message && <p style={styles.message}>{message}</p>}
         </>
       ) : (
-        <h2>Please log in to view Waste Analysis.</h2>
+        <p>Please log in to access this page.</p>
       )}
     </div>
   );
 };
 
-export default Waste;
-
-// Styles Object
 const styles = {
-  page: { textAlign: "center", padding: "20px", background: "#121212", color: "white", minHeight: "100vh" },
-  title: { fontSize: "2.5rem", fontWeight: "bold", color: "#ff4d6d", marginBottom: "20px" },
-  content: { display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: "30px", marginTop: "20px" },
-  card: { background: "rgba(255, 255, 255, 0.1)", padding: "20px", borderRadius: "15px", width: "45%" },
-  input: { width: "100%", padding: "10px", marginTop: "10px", borderRadius: "5px", border: "none", fontSize: "1rem" },
-  button: { background: "#ff4d6d", color: "white", padding: "10px", borderRadius: "5px", border: "none", width: "100%" },
-  deleteButton: { background: "red", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" },
-  image: { width: "50px", height: "50px", objectFit: "cover" },
-  tableContainer: { overflowX: "auto" },
+  page: {
+    margin: "0 auto",
+    padding: "20px",
+    maxWidth: "800px",
+    animation: "fadeIn 1s ease-in-out",
+  },
+  title: {
+    fontSize: "2rem",
+    marginBottom: "20px",
+    textAlign: "center",
+  },
+  content: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  card: {
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+    background: "#f9f9f9",
+    transition: "transform 0.3s ease",
+  },
+  heading: {
+    fontSize: "1.4rem",
+    marginBottom: "10px",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  input: {
+    padding: "10px",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+    fontSize: "14px",
+    transition: "all 0.2s ease-in-out",
+  },
+  button: {
+    padding: "12px",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "16px",
+    transition: "transform 0.2s ease-in-out, background-color 0.2s",
+  },
+  deleteButton: {
+    padding: "10px",
+    backgroundColor: "#e74c3c",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "14px",
+    transition: "transform 0.2s ease-in-out, background-color 0.2s",
+  },
+  tableContainer: {
+    overflowX: "auto",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  image: {
+    width: "50px",
+    height: "50px",
+    objectFit: "cover",
+    borderRadius: "5px",
+  },
 };
+
+// Optional: Add this CSS to index.css or global styles
+// Add this in your CSS file or <style> tag:
+/*
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.fadeIn {
+  animation: fadeIn 0.8s ease;
+}
+button:hover {
+  transform: scale(1.05);
+}
+*/
+
+export default Waste;

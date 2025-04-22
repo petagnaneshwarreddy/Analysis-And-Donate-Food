@@ -1,5 +1,4 @@
 import React from 'react';
-
     import OverBuying from "../assets/Problems.jpeg";
 import Wastemoney from "../assets/wasted-money.jpg";
 import Envimpact from "../assets/environment-impact.jpg";

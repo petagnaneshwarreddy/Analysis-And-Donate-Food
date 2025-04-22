@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 const bodyParser = require("body-parser");
 const multer = require("multer");
 const path = require("path");
@@ -46,16 +47,14 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// **User Schema & Model**
+// Schemas & Models
 const userSchema = new mongoose.Schema({
   username: String,
   email: String,
   password: String,
 });
-
 const User = mongoose.model("User", userSchema);
 
-// **Waste Schema & Model**
 const wasteSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   foodItem: String,
@@ -63,12 +62,11 @@ const wasteSchema = new mongoose.Schema({
   foodReason: String,
   foodWasteDate: { type: Date, default: Date.now },
   location: String,
-  image: String, // 📸 Added field for image uploads
+  image: String,
+  approved: { type: Boolean, default: false },
 });
-
 const WasteData = mongoose.model("WasteData", wasteSchema);
 
-// **Inventory Schema & Model**
 const inventorySchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   itemName: String,
@@ -78,10 +76,9 @@ const inventorySchema = new mongoose.Schema({
   itemExpiryDate: Date,
   consumed: Boolean,
 });
-
 const Inventory = mongoose.model("Inventory", inventorySchema);
 
-// 📸 **Multer Setup for Image Uploads**
+// Multer Image Upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = "./uploads";
@@ -92,10 +89,33 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
-
 const upload = multer({ storage });
 
-// **User Registration**
+// Password Reset Email
+const sendPasswordResetEmail = async (email, resetToken) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: email,
+    subject: "Password Reset Request",
+    html: `<p>You requested a password reset. Click below:</p><a href="${resetUrl}">Reset Password</a>`,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+// Routes
+
+// Register
 app.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -110,7 +130,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// **User Login**
+// Login
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -127,7 +147,45 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// **Log Food Waste (with Image Upload)**
+// Forgot Password
+app.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const resetToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1h" });
+    await sendPasswordResetEmail(email, resetToken);
+
+    res.json({ message: "Reset link sent to your email" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to send reset email" });
+  }
+});
+
+// Reset Password
+app.post("/reset-password/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(500).json({ error: "Reset failed" });
+  }
+});
+
+// Waste Routes
 app.post("/waste", verifyToken, upload.single("image"), async (req, res) => {
   try {
     const { foodItem, foodQuantity, foodReason, foodWasteDate, location } = req.body;
@@ -144,7 +202,7 @@ app.post("/waste", verifyToken, upload.single("image"), async (req, res) => {
       foodReason,
       foodWasteDate,
       location,
-      image: imagePath, // Save image path
+      image: imagePath,
     });
 
     await newWaste.save();
@@ -154,7 +212,6 @@ app.post("/waste", verifyToken, upload.single("image"), async (req, res) => {
   }
 });
 
-// **Fetch Waste Data**
 app.get("/waste", verifyToken, async (req, res) => {
   try {
     const wasteData = await WasteData.find({ user: req.userId });
@@ -164,15 +221,12 @@ app.get("/waste", verifyToken, async (req, res) => {
   }
 });
 
-// **Delete Waste Item**
 app.delete("/waste/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const deletedWaste = await WasteData.findByIdAndDelete(id);
 
-    if (!deletedWaste) {
-      return res.status(404).json({ error: "Waste item not found" });
-    }
+    if (!deletedWaste) return res.status(404).json({ error: "Waste item not found" });
 
     res.json({ message: `Waste item "${deletedWaste.foodItem}" deleted successfully!` });
   } catch (err) {
@@ -180,7 +234,25 @@ app.delete("/waste/:id", verifyToken, async (req, res) => {
   }
 });
 
-// **Add Inventory Item**
+app.patch("/waste/approve/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const wasteItem = await WasteData.findById(id);
+
+    if (!wasteItem) return res.status(404).json({ error: "Waste item not found" });
+    if (wasteItem.approved) return res.status(400).json({ error: "Already approved" });
+
+    wasteItem.approved = true;
+    wasteItem.foodQuantity -= 10;
+    await wasteItem.save();
+
+    res.json({ message: "Food item approved", data: wasteItem });
+  } catch (err) {
+    res.status(500).json({ error: "Approval failed" });
+  }
+});
+
+// Inventory Routes
 app.post("/inventory", verifyToken, async (req, res) => {
   try {
     const { itemName, itemQuantity, itemCost, itemPurchaseDate, itemExpiryDate } = req.body;
@@ -200,21 +272,71 @@ app.post("/inventory", verifyToken, async (req, res) => {
     });
 
     await newItem.save();
-    res.status(201).json({ message: "Item added successfully", data: newItem });
+    res.json({ message: "Inventory item added", data: newItem });
   } catch (err) {
-    res.status(500).json({ error: "Failed to add inventory item." });
+    res.status(500).json({ error: "Failed to add inventory item" });
   }
 });
 
-// **Fetch Inventory Items**
 app.get("/inventory", verifyToken, async (req, res) => {
   try {
-    const inventoryData = await Inventory.find({ user: req.userId });
-    res.json(inventoryData);
+    const inventoryItems = await Inventory.find({ user: req.userId });
+    res.json(inventoryItems);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch inventory data" });
+    res.status(500).json({ error: "Failed to fetch inventory items" });
   }
 });
 
-// Start the server
-app.listen(port, () => console.log(`✅ Server running on port ${port}`));
+app.patch("/inventory/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { itemQuantity } = req.body;
+
+    if (!itemQuantity) return res.status(400).json({ error: "Item quantity is required" });
+
+    const inventoryItem = await Inventory.findById(id);
+    if (!inventoryItem) return res.status(404).json({ error: "Inventory item not found" });
+
+    inventoryItem.itemQuantity = itemQuantity;
+    await inventoryItem.save();
+
+    res.json({ message: "Inventory item updated", data: inventoryItem });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update inventory item" });
+  }
+});
+
+app.delete("/inventory/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedInventory = await Inventory.findByIdAndDelete(id);
+
+    if (!deletedInventory) return res.status(404).json({ error: "Inventory item not found" });
+
+    res.json({ message: `Inventory item "${deletedInventory.itemName}" deleted successfully!` });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete inventory item" });
+  }
+});
+
+app.patch("/inventory/approve/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const inventoryItem = await Inventory.findById(id);
+
+    if (!inventoryItem) return res.status(404).json({ error: "Inventory item not found" });
+    if (inventoryItem.consumed) return res.status(400).json({ error: "Already consumed" });
+
+    inventoryItem.consumed = true;
+    await inventoryItem.save();
+
+    res.json({ message: "Inventory item consumed", data: inventoryItem });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to approve inventory item" });
+  }
+});
+
+// Start Server
+app.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
+});

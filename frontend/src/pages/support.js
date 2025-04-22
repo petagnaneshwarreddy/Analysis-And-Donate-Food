@@ -53,42 +53,11 @@ const Display = ({ newWaste }) => {
   };
 
   const handleGetDirections = (destination) => {
-    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=&destination=${encodeURIComponent(destination)}`;
+    const googleMapsBaseURL = "https://www.google.com/maps/dir/?api=1";
+    
+    // Open Google Maps with "Choose starting location"
+    const mapsUrl = `${googleMapsBaseURL}&origin=&destination=${encodeURIComponent(destination)}`;
     window.open(mapsUrl, "_blank");
-  };
-
-  const handleApprove = async (id) => {
-    const userName = prompt("Please enter your name to approve this food item:");
-    if (!userName) {
-      alert("Approval cancelled. Name is required.");
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("token");
-      const res = await axios.patch(
-        `http://localhost:5000/waste/${id}/approve`,
-        { approvedBy: userName },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const updatedItem = res.data;
-
-      // Decrease quantity by 10% before updating the state
-      updatedItem.foodQuantity = (updatedItem.foodQuantity * 0.9).toFixed(2);
-
-      // Update the waste data with the new quantity
-      setWasteData((prev) =>
-        prev.map((item) =>
-          item._id === id ? updatedItem : item
-        )
-      );
-
-      alert(`✅ ${updatedItem.foodItem} approved by ${userName} and quantity updated to ${updatedItem.foodQuantity}!`);
-    } catch (err) {
-      console.error("❌ Error approving food item:", err);
-      alert("⚠️ Failed to approve the food item. Please try again.");
-    }
   };
 
   return (
@@ -156,7 +125,7 @@ const Display = ({ newWaste }) => {
                       🍔 {item.foodItem}
                     </Typography>
                     <Typography>
-                      ⚖️ <b>Quantity:</b> {item.foodQuantity}
+                      ⚖️ <b>Quantity:</b> {item.foodQuantity} Quantity
                     </Typography>
                     <Typography>
                       ❌ <b>Reason:</b> {item.foodReason}
@@ -168,31 +137,15 @@ const Display = ({ newWaste }) => {
                     <Typography>
                       📍 <b>Location:</b> {item.location}
                     </Typography>
-                    {item.approvedBy && (
-                      <Typography color="green">
-                        ✅ <b>Approved By:</b> {item.approvedBy}
-                      </Typography>
-                    )}
-
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                       <Button
                         variant="contained"
                         color="primary"
                         size="small"
-                        sx={{ mt: 2, mr: 1 }}
+                        sx={{ mt: 2 }}
                         onClick={() => handleGetDirections(item.location)}
                       >
                         Get Directions 📍
-                      </Button>
-
-                      <Button
-                        variant="outlined"
-                        color="success"
-                        size="small"
-                        sx={{ mt: 2 }}
-                        onClick={() => handleApprove(item._id)}
-                      >
-                        Approve Food ✅
                       </Button>
                     </motion.div>
                   </CardContent>
