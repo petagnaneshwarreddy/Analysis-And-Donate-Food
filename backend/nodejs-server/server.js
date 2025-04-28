@@ -16,10 +16,10 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve uploaded images
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // MongoDB Connection
-const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/feedforward";
+const mongoURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/feedforward";
 mongoose
   .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ FeedForward DB connected"))
@@ -37,9 +37,7 @@ const verifyToken = (req, res, next) => {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized - No token" });
   }
-
   const token = authHeader.split(" ")[1];
-
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) return res.status(401).json({ error: "Invalid token" });
     req.userId = decoded.userId;
@@ -120,10 +118,8 @@ app.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = new User({ username, email, password: hashedPassword });
     await newUser.save();
-
     res.json({ message: "User registered successfully!" });
   } catch (err) {
     res.status(500).json({ error: "Registration failed." });
@@ -135,11 +131,9 @@ app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ error: "Invalid credentials" });
     }
-
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1h" });
     res.json({ token });
   } catch (err) {
@@ -152,12 +146,9 @@ app.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
-
     if (!user) return res.status(404).json({ error: "User not found" });
-
     const resetToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1h" });
     await sendPasswordResetEmail(email, resetToken);
-
     res.json({ message: "Reset link sent to your email" });
   } catch (err) {
     res.status(500).json({ error: "Failed to send reset email" });
@@ -169,16 +160,12 @@ app.post("/reset-password/:token", async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
-
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.userId);
-
     if (!user) return res.status(404).json({ error: "User not found" });
-
     const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
     await user.save();
-
     res.json({ message: "Password reset successful" });
   } catch (err) {
     res.status(500).json({ error: "Reset failed" });
@@ -190,11 +177,9 @@ app.post("/waste", verifyToken, upload.single("image"), async (req, res) => {
   try {
     const { foodItem, foodQuantity, foodReason, foodWasteDate, location } = req.body;
     const imagePath = req.file ? req.file.filename : null;
-
     if (!foodItem || !foodQuantity || !foodReason || !foodWasteDate || !location) {
       return res.status(400).json({ error: "All fields are required" });
     }
-
     const newWaste = new WasteData({
       user: req.userId,
       foodItem,
@@ -204,7 +189,6 @@ app.post("/waste", verifyToken, upload.single("image"), async (req, res) => {
       location,
       image: imagePath,
     });
-
     await newWaste.save();
     res.json({ message: "Waste data recorded", data: newWaste });
   } catch (err) {
@@ -225,10 +209,8 @@ app.delete("/waste/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const deletedWaste = await WasteData.findByIdAndDelete(id);
-
     if (!deletedWaste) return res.status(404).json({ error: "Waste item not found" });
-
-    res.json({ message: `Waste item "${deletedWaste.foodItem}" deleted successfully!` });
+    res.json({ message: `Waste item \"${deletedWaste.foodItem}\" deleted successfully!` });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete waste item" });
   }
@@ -238,14 +220,11 @@ app.patch("/waste/approve/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const wasteItem = await WasteData.findById(id);
-
     if (!wasteItem) return res.status(404).json({ error: "Waste item not found" });
     if (wasteItem.approved) return res.status(400).json({ error: "Already approved" });
-
     wasteItem.approved = true;
     wasteItem.foodQuantity -= 10;
     await wasteItem.save();
-
     res.json({ message: "Food item approved", data: wasteItem });
   } catch (err) {
     res.status(500).json({ error: "Approval failed" });
@@ -256,11 +235,9 @@ app.patch("/waste/approve/:id", verifyToken, async (req, res) => {
 app.post("/inventory", verifyToken, async (req, res) => {
   try {
     const { itemName, itemQuantity, itemCost, itemPurchaseDate, itemExpiryDate } = req.body;
-
     if (!itemName || !itemQuantity || !itemCost || !itemPurchaseDate || !itemExpiryDate) {
       return res.status(400).json({ error: "All fields are required" });
     }
-
     const newItem = new Inventory({
       user: req.userId,
       itemName,
@@ -270,7 +247,6 @@ app.post("/inventory", verifyToken, async (req, res) => {
       itemExpiryDate,
       consumed: false,
     });
-
     await newItem.save();
     res.json({ message: "Inventory item added", data: newItem });
   } catch (err) {
@@ -291,15 +267,11 @@ app.patch("/inventory/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { itemQuantity } = req.body;
-
     if (!itemQuantity) return res.status(400).json({ error: "Item quantity is required" });
-
     const inventoryItem = await Inventory.findById(id);
     if (!inventoryItem) return res.status(404).json({ error: "Inventory item not found" });
-
     inventoryItem.itemQuantity = itemQuantity;
     await inventoryItem.save();
-
     res.json({ message: "Inventory item updated", data: inventoryItem });
   } catch (err) {
     res.status(500).json({ error: "Failed to update inventory item" });
@@ -310,10 +282,8 @@ app.delete("/inventory/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const deletedInventory = await Inventory.findByIdAndDelete(id);
-
     if (!deletedInventory) return res.status(404).json({ error: "Inventory item not found" });
-
-    res.json({ message: `Inventory item "${deletedInventory.itemName}" deleted successfully!` });
+    res.json({ message: `Inventory item \"${deletedInventory.itemName}\" deleted successfully!` });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete inventory item" });
   }
@@ -323,13 +293,10 @@ app.patch("/inventory/approve/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const inventoryItem = await Inventory.findById(id);
-
     if (!inventoryItem) return res.status(404).json({ error: "Inventory item not found" });
     if (inventoryItem.consumed) return res.status(400).json({ error: "Already consumed" });
-
     inventoryItem.consumed = true;
     await inventoryItem.save();
-
     res.json({ message: "Inventory item consumed", data: inventoryItem });
   } catch (err) {
     res.status(500).json({ error: "Failed to approve inventory item" });
