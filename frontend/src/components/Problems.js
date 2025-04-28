@@ -9,7 +9,7 @@ import Sustainable from "../assets/sustainable.jpg";
 import underline1 from "../assets/underline-heading.png";
 import Arrow1 from "../assets/arrow1.png";
 import Sun from "../assets/Highlight_05.png";
-import Smallstars from "../assets/small-stars.png";
+import Smallstars1 from "../assets/small-stars.png";
 import Smallstars2 from "../assets/small-stars2.png";
 
 

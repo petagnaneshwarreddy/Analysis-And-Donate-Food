@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import axios from "axios";
 import { Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../AuthContext";
+import { AuthContext } from "../AuthContext"; // Adjust if necessary
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -35,7 +35,7 @@ const Login = () => {
 
       setTimeout(() => {
         clearInterval(timer);
-        navigate("/");
+        navigate("/"); // Redirect to home page after 5 seconds
       }, 5000);
     } catch (error) {
       if (error.response && error.response.data.error) {

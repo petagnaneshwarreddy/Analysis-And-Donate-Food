@@ -1,69 +1,68 @@
 .help-widget-container {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 9999;
-  }
-  
-  .chat-toggle-button {
-    background-color: #ff004c;
-    border: none;
-    border-radius: 50%;
-    color: white;
-    padding: 14px;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .chat-box {
-    width: 280px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
-    transform: scale(0);
-    transform-origin: bottom right;
-    transition: transform 0.3s ease-in-out;
-    position: absolute;
-    bottom: 70px;
-    right: 0;
-  }
-  
-  .chat-box.open {
-    transform: scale(1);
-  }
-  
-  .chat-header {
-    background-color: #ff004c;
-    color: white;
-    padding: 12px;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .chat-content {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .chat-content textarea {
-    resize: none;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-  }
-  
-  .send-btn {
-    background-color: #ff004c;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    align-self: flex-end;
-  }
-  
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+}
+
+.chat-toggle-button {
+  background-color: #ff004c;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  padding: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.chat-box {
+  width: 280px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  transform: scale(0);
+  transform-origin: bottom right;
+  transition: transform 0.3s ease-in-out;
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+}
+
+.chat-box.open {
+  transform: scale(1);
+}
+
+.chat-header {
+  background-color: #ff004c;
+  color: white;
+  padding: 12px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-content textarea {
+  resize: none;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.send-btn {
+  background-color: #ff004c;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: flex-end;
+}

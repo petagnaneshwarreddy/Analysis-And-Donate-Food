@@ -3,8 +3,6 @@ import axios from "axios";
 import { AuthContext } from "../AuthContext";
 import { CircularProgress } from "@mui/material";
 
-// Keep imports the same
-
 const Waste = () => {
   const { loggedIn } = useContext(AuthContext);
   const [foodItem, setFoodItem] = useState("");
@@ -16,6 +14,7 @@ const Waste = () => {
   const [wasteData, setWasteData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [approvalMessages, setApprovalMessages] = useState([]);
 
   useEffect(() => {
     if (loggedIn) fetchWasteData();
@@ -66,7 +65,7 @@ const Waste = () => {
       setMessage("✅ Waste item added successfully!");
       setWasteData([...wasteData, response.data.data]);
 
-      // Clear form
+      // Clear form fields
       setFoodItem("");
       setFoodQuantity("");
       setFoodReason("");
@@ -102,30 +101,111 @@ const Waste = () => {
     }
   };
 
+  const handleApprove = async (id, quantity, foodItem) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("⚠️ You must be logged in.");
+        return;
+      }
+
+      // Decrease the food quantity by 10% or any logic you need
+      const updatedQuantity = Math.floor(quantity * 0.9); // Decrease by 10%
+
+      // Send the approval request with updated quantity
+      const response = await axios.patch(
+        `http://localhost:5000/waste/approve/${id}`,
+        { foodQuantity: updatedQuantity },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Add approval message
+      setApprovalMessages([
+        ...approvalMessages,
+        `${foodItem} has been approved. New quantity: ${updatedQuantity}g.`,
+      ]);
+
+      alert("✅ Food approved successfully!");
+      console.log(response.data);
+
+      fetchWasteData(); // Refresh data
+
+    } catch (error) {
+      alert("❌ Failed to approve food.");
+      console.error(error);
+    }
+  };
+
   return (
     <div style={styles.page}>
       {loggedIn ? (
         <>
           <h1 style={styles.title}>LOG YOUR FOOD WASTE</h1>
+
           <div style={styles.content}>
             {/* Waste Form */}
-            <div style={styles.card} className="fadeIn">
+            <div style={styles.card}>
               <h2 style={styles.heading}>Food Waste Details</h2>
               <form onSubmit={handleSubmit} style={styles.form}>
-                <input style={styles.input} placeholder="Food Item" value={foodItem} onChange={(e) => setFoodItem(e.target.value)} required />
-                <input style={styles.input} placeholder="Quantity Wasted (grams)" type="number" value={foodQuantity} onChange={(e) => setFoodQuantity(e.target.value)} required />
-                <input style={styles.input} placeholder="Reason for Waste" value={foodReason} onChange={(e) => setFoodReason(e.target.value)} required />
-                <input style={styles.input} type="date" value={foodWasteDate} onChange={(e) => setFoodWasteDate(e.target.value)} required />
-                <input style={styles.input} placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} required />
-                <input style={styles.input} type="file" onChange={(e) => setImage(e.target.files[0])} />
+                <input
+                  type="text"
+                  value={foodItem}
+                  placeholder="Food Item"
+                  onChange={(e) => setFoodItem(e.target.value)}
+                  required
+                  style={styles.input}
+                />
+                <input
+                  type="number"
+                  value={foodQuantity}
+                  placeholder="Quantity Wasted (grams)"
+                  onChange={(e) => setFoodQuantity(e.target.value)}
+                  required
+                  style={styles.input}
+                />
+                <input
+                  type="text"
+                  value={foodReason}
+                  placeholder="Reason for Waste"
+                  onChange={(e) => setFoodReason(e.target.value)}
+                  required
+                  style={styles.input}
+                />
+                <input
+                  type="date"
+                  value={foodWasteDate}
+                  onChange={(e) => setFoodWasteDate(e.target.value)}
+                  required
+                  style={styles.input}
+                />
+                <input
+                  type="text"
+                  value={location}
+                  placeholder="Location"
+                  onChange={(e) => setLocation(e.target.value)}
+                  required
+                  style={styles.input}
+                />
+                <input
+                  type="file"
+                  onChange={(e) => setImage(e.target.files[0])}
+                  style={styles.input}
+                />
+
                 <button type="submit" disabled={loading} style={styles.button}>
-                  {loading ? <CircularProgress size={24} style={{ color: "white" }} /> : "ADD"}
+                  {loading ? (
+                    <CircularProgress size={24} style={{ color: "white" }} />
+                  ) : (
+                    "ADD"
+                  )}
                 </button>
               </form>
             </div>
 
             {/* Waste Table */}
-            <div style={styles.card} className="fadeIn">
+            <div style={styles.card}>
               <h2 style={styles.heading}>Your Food Waste Records</h2>
               <div style={styles.tableContainer}>
                 <table style={styles.table}>
@@ -150,12 +230,27 @@ const Waste = () => {
                         <td>{item.location}</td>
                         <td>
                           {item.image && (
-                            <img src={`http://localhost:5000/uploads/${item.image}`} alt="Food Waste" style={styles.image} />
+                            <img
+                              src={`http://localhost:5000/uploads/${item.image}`}
+                              alt="Food Waste"
+                              style={styles.image}
+                            />
                           )}
                         </td>
                         <td>
-                          <button style={styles.deleteButton} onClick={() => handleDelete(item._id)}>
+                          <button
+                            style={styles.deleteButton}
+                            onClick={() => handleDelete(item._id)}
+                          >
                             Delete
+                          </button>
+                          <button
+                            style={styles.approveButton}
+                            onClick={() =>
+                              handleApprove(item._id, item.foodQuantity, item.foodItem)
+                            }
+                          >
+                            Approve
                           </button>
                         </td>
                       </tr>
@@ -165,6 +260,18 @@ const Waste = () => {
               </div>
             </div>
           </div>
+
+          {/* Approval Messages */}
+          {approvalMessages.length > 0 && (
+            <div style={styles.approvalMessages}>
+              <h2 style={styles.heading}>Approval Messages</h2>
+              <ul>
+                {approvalMessages.map((message, index) => (
+                  <li key={index}>{message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       ) : (
         <p>Please log in to access this page.</p>
@@ -178,89 +285,76 @@ const styles = {
     margin: "0 auto",
     padding: "20px",
     maxWidth: "800px",
-    animation: "fadeIn 1s ease-in-out",
   },
   title: {
     fontSize: "2rem",
     marginBottom: "20px",
-    textAlign: "center",
   },
   content: {
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
   },
   card: {
+    marginBottom: "20px",
     padding: "20px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    background: "#f9f9f9",
-    transition: "transform 0.3s ease",
+    borderRadius: "8px",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
   },
   heading: {
-    fontSize: "1.4rem",
+    fontSize: "1.5rem",
     marginBottom: "10px",
   },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "10px",
   },
   input: {
     padding: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-    transition: "all 0.2s ease-in-out",
+    margin: "5px 0",
+    borderRadius: "5px",
+    border: "1px solid #ddd",
   },
   button: {
-    padding: "12px",
-    backgroundColor: "#4CAF50",
+    padding: "10px 15px",
+    margin: "10px 0",
+    backgroundColor: "#007bff",
     color: "white",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "5px",
     cursor: "pointer",
-    fontSize: "16px",
-    transition: "transform 0.2s ease-in-out, background-color 0.2s",
   },
   deleteButton: {
-    padding: "10px",
-    backgroundColor: "#e74c3c",
+    padding: "10px 15px",
+    marginRight: "5px",
+    backgroundColor: "red",
     color: "white",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "5px",
     cursor: "pointer",
-    fontSize: "14px",
-    transition: "transform 0.2s ease-in-out, background-color 0.2s",
+  },
+  approveButton: {
+    padding: "10px 15px",
+    backgroundColor: "green",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
   },
   tableContainer: {
     overflowX: "auto",
   },
   table: {
     width: "100%",
-    borderCollapse: "collapse",
+    border: "1px solid #ddd",
+  },
+  approvalMessages: {
+    marginTop: "20px",
   },
   image: {
     width: "50px",
     height: "50px",
     objectFit: "cover",
-    borderRadius: "5px",
   },
 };
-
-// Optional: Add this CSS to index.css or global styles
-// Add this in your CSS file or <style> tag:
-/*
-@keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-.fadeIn {
-  animation: fadeIn 0.8s ease;
-}
-button:hover {
-  transform: scale(1.05);
-}
-*/
 
 export default Waste;
