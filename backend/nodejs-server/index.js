@@ -12,7 +12,6 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-const recipeRoutes = require("./routes/recipes");
 app.use("/api/recipes", recipeRoutes);
 const port = process.env.PORT || 5000;
 app.get("/", (req, res) => {
