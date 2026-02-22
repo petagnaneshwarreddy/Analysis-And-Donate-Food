@@ -10,7 +10,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// ✅ Import recipe routes
+// ✅ IMPORT recipe routes
 const recipeRoutes = require("./routes/recipes");
 
 const app = express();
@@ -27,9 +27,10 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use("/api/recipes", recipeRoutes);
-
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ✅ Register recipe route AFTER middleware
+app.use("/api/recipes", recipeRoutes);
 
 /* ===========================
    BASIC ROUTES
@@ -118,27 +119,9 @@ const inventorySchema = new mongoose.Schema({
 const Inventory = mongoose.model("Inventory", inventorySchema);
 
 /* ===========================
-   MULTER CONFIG
-=========================== */
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = "./uploads";
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const upload = multer({ storage });
-
-/* ===========================
    AUTH ROUTES
 =========================== */
 
-// Register
 app.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -164,7 +147,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// Login
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
