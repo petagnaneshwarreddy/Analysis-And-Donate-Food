@@ -12,16 +12,27 @@ const fs = require("fs");
 
 const app = express();
 const port = process.env.PORT || 5000;
-
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "🚀 Backend Food Analysis API is running",
+    status: "OK"
+  });
+});
+app.get("/health", (req, res) => {
+  res.status(200).send("Server is healthy ✅");
+});
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*",
+  credentials: true
+}));
 app.use(bodyParser.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // MongoDB Connection
 const mongoURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/feedforward";
 mongoose
-  .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(mongoURI)
   .then(() => console.log("✅ FeedForward DB connected"))
   .catch((err) => {
     console.error("❌ DB connection error:", err);
