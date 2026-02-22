@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const recipeRoutes = require("./routes/recipes");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -11,6 +12,8 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
+const recipeRoutes = require("./routes/recipes");
+app.use("/api/recipes", recipeRoutes);
 const port = process.env.PORT || 5000;
 app.get("/", (req, res) => {
   res.status(200).json({
