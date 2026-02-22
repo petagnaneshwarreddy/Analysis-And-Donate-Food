@@ -300,6 +300,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loginMessage, setLoginMessage] = useState("");
   const [countdown, setCountdown] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
@@ -320,20 +321,29 @@ const Login = () => {
   }, [countdown, navigate]);
 
   // ── original handlers (unchanged) ────────────────────────────────────
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginMessage("");
-    try {
-      const response = await axios.post(`${API_BASE}/login`, { email, password });
-      const token = response.data.token;
-      localStorage.setItem("token", token);
-      handleLoginSuccess();
-      setLoginMessage("Login Successfully");
-      setCountdown(5);
-    } catch (error) {
-      setLoginMessage(error?.response?.data?.error || "Invalid email or password");
-    }
-  };
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoginMessage("");
+  setLoading(true);
+
+  try {
+    const response = await axios.post(`${API_BASE}/login`, {
+      email,
+      password,
+    });
+
+    const token = response.data.token;
+    localStorage.setItem("token", token);
+
+    handleLoginSuccess();
+    setLoginMessage("Login Successfully");
+    setCountdown(5);
+  } catch (error) {
+    setLoginMessage("Invalid email or password");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
@@ -396,14 +406,15 @@ const Login = () => {
                     required
                   />
 
-                  <Button
-                    className="login-button"
-                    type="submit"
-                    variant="contained"
-                    fullWidth
-                  >
-                    LOG IN
-                  </Button>
+                <Button
+  className="login-button"
+  type="submit"
+  variant="contained"
+  fullWidth
+  disabled={loading}
+>
+  {loading ? "Signing In..." : "LOG IN"}
+</Button>
 
                   <Button
                     className="forgot-password-button"
