@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import axios from "axios";
+import { Button } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../AuthContext";
 
@@ -10,7 +11,7 @@ const styles = `
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .lg-root {
+  .login-body {
     min-height: 100vh;
     background: #09090f;
     font-family: 'DM Sans', sans-serif;
@@ -23,28 +24,41 @@ const styles = `
     padding: 24px;
   }
 
-  /* Ambient glows */
-  .lg-glow-1 {
+  .login-body::before {
+    content: '';
     position: fixed; top: -160px; left: -120px;
     width: 500px; height: 500px; border-radius: 50%;
     background: radial-gradient(circle, rgba(255,107,53,0.17) 0%, transparent 70%);
-    pointer-events: none; z-index: 0;
+    pointer-events: none;
   }
-  .lg-glow-2 {
+
+  .login-body::after {
+    content: '';
     position: fixed; bottom: -150px; right: -100px;
     width: 440px; height: 440px; border-radius: 50%;
     background: radial-gradient(circle, rgba(87,183,255,0.12) 0%, transparent 70%);
-    pointer-events: none; z-index: 0;
+    pointer-events: none;
   }
 
-  /* Card */
-  .lg-card {
-    width: 100%; max-width: 440px;
+  .login-body-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 440px;
+  }
+
+  .form-container {
     background: rgba(255,255,255,0.025);
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 28px;
     padding: 48px 44px 42px;
-    position: relative; z-index: 1;
     backdrop-filter: blur(18px);
     animation: fadeUp 0.35s ease;
   }
@@ -54,9 +68,9 @@ const styles = `
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Brand */
   .lg-brand {
-    text-align: center; margin-bottom: 32px;
+    text-align: center;
+    margin-bottom: 32px;
   }
 
   .lg-badge {
@@ -82,14 +96,15 @@ const styles = `
     50%       { opacity: 0.4; transform: scale(0.7); }
   }
 
-  .lg-title {
+  /* original h1.opacity class — restyled */
+  h1.opacity {
     font-family: 'Syne', sans-serif;
-    font-size: 32px; font-weight: 800;
-    letter-spacing: -1.2px; line-height: 1.1;
-    margin-bottom: 6px;
+    font-size: 30px; font-weight: 800;
+    letter-spacing: -1px; line-height: 1.1;
+    color: #fff; margin-bottom: 6px;
   }
 
-  .lg-title .accent {
+  h1.opacity .accent {
     background: linear-gradient(120deg, #ff6b35 30%, #ffb088);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -98,29 +113,19 @@ const styles = `
   .lg-subtitle {
     font-size: 14px; font-weight: 300;
     color: rgba(255,255,255,0.38);
+    margin-top: 4px;
   }
 
-  /* Section heading */
-  .lg-section-title {
+  .form-container h2 {
     font-family: 'Syne', sans-serif;
-    font-size: 13px; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase;
-    color: rgba(255,255,255,0.28);
-    margin-bottom: 20px;
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 20px; color: #fff;
     text-align: center;
   }
 
-  /* Fields */
-  .lg-field { margin-bottom: 14px; }
-
-  .lg-field label {
-    display: block;
-    font-size: 10.5px; font-weight: 500;
-    letter-spacing: 1.2px; text-transform: uppercase;
-    color: rgba(255,255,255,0.32); margin-bottom: 7px;
-  }
-
-  .lg-field input {
+  /* Inputs */
+  .form-container input[type="email"],
+  .form-container input[type="password"] {
     width: 100%;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.09);
@@ -128,78 +133,103 @@ const styles = `
     font-family: 'DM Sans', sans-serif;
     font-size: 14.5px; color: #fff; outline: none;
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    margin-bottom: 14px;
+    display: block;
   }
 
-  .lg-field input::placeholder { color: rgba(255,255,255,0.18); }
+  .form-container input::placeholder {
+    color: rgba(255,255,255,0.22);
+    font-size: 11.5px; letter-spacing: 1.2px;
+  }
 
-  .lg-field input:focus {
+  .form-container input:focus {
     border-color: rgba(255,107,53,0.55);
     background: rgba(255,107,53,0.05);
     box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
   }
 
-  /* Primary button */
-  .lg-btn {
-    width: 100%; padding: 15px;
-    border-radius: 11px; border: none;
-    background: linear-gradient(135deg, #ff6b35 0%, #e84e1b 100%);
-    color: #fff;
-    font-family: 'Syne', sans-serif;
-    font-size: 14px; font-weight: 700; letter-spacing: 0.8px;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-    box-shadow: 0 6px 26px rgba(255,107,53,0.38);
-    display: flex; align-items: center; justify-content: center; gap: 9px;
-    margin-top: 22px;
+  /* MUI Button overrides */
+  .login-button.MuiButton-root {
+    background: linear-gradient(135deg, #ff6b35, #e84e1b) !important;
+    color: #fff !important;
+    font-family: 'Syne', sans-serif !important;
+    font-size: 14px !important; font-weight: 700 !important;
+    letter-spacing: 1px !important;
+    border-radius: 11px !important;
+    padding: 14px !important;
+    box-shadow: 0 6px 26px rgba(255,107,53,0.38) !important;
+    text-transform: uppercase !important;
+    transition: transform 0.15s, box-shadow 0.15s !important;
+    margin-top: 6px !important;
   }
 
-  .lg-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 34px rgba(255,107,53,0.48);
+  .login-button.MuiButton-root:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 34px rgba(255,107,53,0.48) !important;
   }
 
-  .lg-btn:active:not(:disabled) { transform: translateY(0); opacity: 0.88; }
-  .lg-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-  /* Ghost button */
-  .lg-btn-ghost {
-    width: 100%; padding: 13px;
-    border-radius: 11px;
-    border: 1px solid rgba(255,255,255,0.09);
-    background: transparent; color: rgba(255,255,255,0.45);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13.5px; font-weight: 400;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s, background 0.2s;
-    margin-top: 10px;
+  .forgot-password-button.MuiButton-root {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    color: rgba(255,255,255,0.4) !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 13px !important;
+    border-radius: 11px !important;
+    padding: 12px !important;
+    margin-top: 10px !important;
+    text-transform: none !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s, color 0.2s, background 0.2s !important;
   }
 
-  .lg-btn-ghost:hover {
-    border-color: rgba(255,107,53,0.4);
-    color: #ff6b35;
-    background: rgba(255,107,53,0.05);
+  .forgot-password-button.MuiButton-root:hover {
+    border-color: rgba(255,107,53,0.4) !important;
+    color: #ff6b35 !important;
+    background: rgba(255,107,53,0.05) !important;
   }
 
-  /* Forgot password link */
-  .lg-forgot {
-    text-align: right; margin-top: 6px;
+  .reset-password-button.MuiButton-root {
+    background: linear-gradient(135deg, #ff6b35, #e84e1b) !important;
+    color: #fff !important;
+    font-family: 'Syne', sans-serif !important;
+    font-size: 14px !important; font-weight: 700 !important;
+    border-radius: 11px !important;
+    padding: 14px !important;
+    box-shadow: 0 6px 26px rgba(255,107,53,0.38) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    transition: transform 0.15s, box-shadow 0.15s !important;
   }
 
-  .lg-forgot button {
-    background: none; border: none;
-    color: rgba(255,107,53,0.75);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12.5px; cursor: pointer;
-    transition: color 0.2s;
-    padding: 0;
+  .reset-password-button.MuiButton-root:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 34px rgba(255,107,53,0.48) !important;
   }
 
-  .lg-forgot button:hover { color: #ff6b35; }
+  .cancel-button.MuiButton-root {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    color: rgba(255,255,255,0.4) !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 13px !important;
+    border-radius: 11px !important;
+    padding: 12px !important;
+    margin-top: 10px !important;
+    text-transform: none !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s, color 0.2s !important;
+  }
+
+  .cancel-button.MuiButton-root:hover {
+    border-color: rgba(255,107,53,0.4) !important;
+    color: #ff6b35 !important;
+    background: rgba(255,107,53,0.05) !important;
+  }
 
   /* Divider */
   .lg-divider {
     display: flex; align-items: center; gap: 12px;
-    margin: 22px 0 18px;
+    margin: 18px 0 14px;
   }
 
   .lg-divider-line {
@@ -208,63 +238,59 @@ const styles = `
   }
 
   .lg-divider span {
-    font-size: 11px; color: rgba(255,255,255,0.22);
+    font-size: 11px; color: rgba(255,255,255,0.2);
     letter-spacing: 1px;
   }
 
-  /* Sign-up footer */
-  .lg-signup-row {
+  /* original .signup-link */
+  .signup-link {
     text-align: center;
     font-size: 13.5px; color: rgba(255,255,255,0.3);
-    margin-top: 20px;
+    margin-top: 4px;
   }
 
-  .lg-signup-row a {
+  .signup-link a {
     color: #ff6b35; text-decoration: none; font-weight: 500;
   }
 
-  .lg-signup-row a:hover { text-decoration: underline; }
+  .signup-link a:hover { text-decoration: underline; }
 
-  /* Toast */
-  .lg-toast {
-    position: fixed; top: 24px; left: 50%;
-    transform: translateX(-50%);
-    padding: 12px 26px;
+  /* original .message */
+  .message {
+    margin-top: 18px;
+    padding: 12px 20px;
     border-radius: 100px;
-    font-family: 'DM Sans', sans-serif;
     font-size: 13.5px; font-weight: 500;
-    z-index: 999; white-space: nowrap; max-width: 90vw;
-    animation: toastIn 0.3s ease;
-    display: flex; align-items: center; gap: 9px;
+    text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
   }
 
-  .lg-toast.success {
+  .message.success {
     background: rgba(20,200,120,0.12);
     border: 1px solid rgba(20,200,120,0.35);
     color: #14c878;
   }
 
-  .lg-toast.error {
+  .message.error {
     background: rgba(255,70,70,0.1);
     border: 1px solid rgba(255,70,70,0.32);
     color: #ff6b6b;
   }
 
-  @keyframes toastIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* original .countdown-timer */
+  .countdown-timer {
+    text-align: center;
+    font-size: 12px; color: rgba(255,255,255,0.28);
+    margin-top: 12px;
   }
 
-  .lg-countdown {
-    text-align: center; font-size: 12px;
-    color: rgba(255,255,255,0.28); margin-top: 14px;
+  .countdown-timer span {
+    color: #ff6b35; font-weight: 600;
   }
-
-  .lg-countdown b { color: #ff6b35; }
 
   @media (max-width: 480px) {
-    .lg-card { padding: 32px 22px 28px; }
-    .lg-title { font-size: 26px; }
+    .form-container { padding: 32px 20px 28px; }
+    h1.opacity { font-size: 24px; }
   }
 `;
 
@@ -287,7 +313,9 @@ const Login = () => {
       navigate("/");
       return;
     }
-    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [countdown, navigate]);
 
@@ -322,122 +350,132 @@ const Login = () => {
     }
   };
 
-  const isSuccess = loginMessage === "Login Successfully";
-  const toastType = isSuccess || loginMessage.toLowerCase().includes("sent") ? "success" : "error";
-
+  // ── original JSX structure — only UI styles added ────────────────────
   return (
     <>
       <style>{styles}</style>
-      <div className="lg-root">
-        <div className="lg-glow-1" />
-        <div className="lg-glow-2" />
 
-        {/* Toast */}
-        {loginMessage && (
-          <div className={`lg-toast ${toastType}`}>
-            <span>{toastType === "success" ? "✓" : "✕"}</span>
-            {loginMessage}
-          </div>
-        )}
+      <div className="login-body">
+        <section className="login-body-container">
+          <div className="login-container">
+            <div className="form-container">
 
-        <div className="lg-card">
-          {/* Brand header */}
-          <div className="lg-brand">
-            <div className="lg-badge">
-              <span className="lg-badge-dot" />
-              fEEDfORWARD
-            </div>
-            <h1 className="lg-title">
-              {isResettingPassword ? (
-                <>Reset your <span className="accent">password</span></>
+              {/* Brand header — added above original h1 */}
+              <div className="lg-brand">
+                <div className="lg-badge">
+                  <span className="lg-badge-dot" />
+                  fEEDfORWARD
+                </div>
+                <h1 className="opacity">
+                  {isResettingPassword
+                    ? <>Reset your <span className="accent">password</span></>
+                    : <>Welcome <span className="accent">back</span></>}
+                </h1>
+                <p className="lg-subtitle">
+                  {isResettingPassword
+                    ? "We'll send a reset link to your inbox."
+                    : "Sign in to continue making a difference."}
+                </p>
+              </div>
+
+              {!isResettingPassword ? (
+                <form onSubmit={handleLogin}>
+                  <input
+                    type="email"
+                    placeholder="EMAIL"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+
+                  <input
+                    type="password"
+                    placeholder="PASSWORD"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+
+                  <Button
+                    className="login-button"
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                  >
+                    LOG IN
+                  </Button>
+
+                  <Button
+                    className="forgot-password-button"
+                    onClick={() => setIsResettingPassword(true)}
+                    fullWidth
+                  >
+                    Forgot Password?
+                  </Button>
+
+                  <div className="lg-divider">
+                    <div className="lg-divider-line" />
+                    <span>OR</span>
+                    <div className="lg-divider-line" />
+                  </div>
+
+                  <p className="signup-link">
+                    Don't have an account?{" "}
+                    <Link to="/signup">Sign Up</Link>
+                  </p>
+                </form>
               ) : (
-                <>Welcome <span className="accent">back</span></>
+                <form onSubmit={handleForgotPassword}>
+                  <h2>Reset Your Password</h2>
+
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+
+                  <Button
+                    className="reset-password-button"
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                  >
+                    Send Reset Email
+                  </Button>
+
+                  <Button
+                    className="cancel-button"
+                    onClick={() => setIsResettingPassword(false)}
+                    fullWidth
+                  >
+                    ← Back to Login
+                  </Button>
+                </form>
               )}
-            </h1>
-            <p className="lg-subtitle">
-              {isResettingPassword
-                ? "We'll send a reset link to your inbox."
-                : "Sign in to continue making a difference."}
-            </p>
+
+              {/* Message — original className logic preserved */}
+              {loginMessage && (
+                <p
+                  className={`message ${
+                    loginMessage === "Login Successfully" ? "success" : "error"
+                  }`}
+                >
+                  {loginMessage === "Login Successfully" ? "✓" : "✕"} {loginMessage}
+                </p>
+              )}
+
+              {/* Countdown — original condition preserved */}
+              {countdown !== null && countdown > 0 && (
+                <p className="countdown-timer">
+                  Redirecting in <span>{countdown}</span> seconds...
+                </p>
+              )}
+
+            </div>
           </div>
-
-          {/* ── LOGIN FORM ── */}
-          {!isResettingPassword ? (
-            <form onSubmit={handleLogin}>
-              <div className="lg-field">
-                <label>Email</label>
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="lg-field">
-                <label>Password</label>
-                <input
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="lg-forgot">
-                <button type="button" onClick={() => { setIsResettingPassword(true); setLoginMessage(""); }}>
-                  Forgot password?
-                </button>
-              </div>
-
-              <button type="submit" className="lg-btn" disabled={countdown !== null}>
-                {countdown !== null ? `Redirecting in ${countdown}s…` : "Log In →"}
-              </button>
-
-              {countdown !== null && (
-                <p className="lg-countdown">Taking you home in <b>{countdown}</b> seconds…</p>
-              )}
-
-              <div className="lg-divider">
-                <div className="lg-divider-line" />
-                <span>OR</span>
-                <div className="lg-divider-line" />
-              </div>
-
-              <p className="lg-signup-row">
-                Don't have an account? <Link to="/signup">Sign Up</Link>
-              </p>
-            </form>
-          ) : (
-            /* ── FORGOT PASSWORD FORM ── */
-            <form onSubmit={handleForgotPassword}>
-              <div className="lg-field">
-                <label>Your Email</label>
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <button type="submit" className="lg-btn">
-                Send Reset Email →
-              </button>
-
-              <button
-                type="button"
-                className="lg-btn-ghost"
-                onClick={() => { setIsResettingPassword(false); setLoginMessage(""); }}
-              >
-                ← Back to Login
-              </button>
-            </form>
-          )}
-        </div>
+        </section>
       </div>
     </>
   );
